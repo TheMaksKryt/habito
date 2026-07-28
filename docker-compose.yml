@@ -1,0 +1,97 @@
+name: habito
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-habito}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-habito}
+    ports:
+      # хостовый порт параметризован: 5432 на машине может быть занят другим
+      # проектом; внутри compose-сети api ходит на postgres:5432 независимо от него
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      # named volume: данные переживают down/up (без -v) — SC-006
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-habito} -d ${POSTGRES_DB:-habito}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-habito}:${POSTGRES_PASSWORD:-dev-change-me}@postgres:5432/${POSTGRES_DB:-habito}
+      REDIS_URL: redis://redis:6379
+      API_PORT: '3333'
+      APP_VERSION: ${APP_VERSION:-dev}
+    ports:
+      - '3333:3333'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # в slim-образе нет curl — проверка средствами bun; /health отвечает 200
+      # только при доступности обеих зависимостей, поэтому статус контейнера
+      # честно отражает деградацию
+      test:
+        - CMD
+        - bun
+        - -e
+        - "fetch('http://localhost:3333/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    environment:
+      NUXT_PUBLIC_API_URL: ${NUXT_PUBLIC_API_URL:-http://localhost:3333}
+      # SSR внутри compose-сети ходит на api по имени сервиса (split-horizon)
+      NUXT_INTERNAL_API_URL: http://api:3333
+    ports:
+      - '3000:3000'
+    depends_on:
+      # service_started (не healthy): страница обязана открываться и показывать
+      # «API недоступен», даже если api деградировал
+      api:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - "fetch('http://localhost:3000').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres-data:
+  redis-data:

@@ -1,0 +1,16 @@
+node_modules/
+.nuxt/
+.output/
+dist/
+coverage/
+apps/web/generated/
+apps/api/generated/
+apps/api/openapi.json
+bun.lock
+
+# Спек-артефакты и документы (spec-kit управляет их форматом сам)
+specs/
+.specify/
+.claude/
+plan.md
+images/

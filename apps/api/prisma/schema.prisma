@@ -1,0 +1,13 @@
+// Walking skeleton: схема без моделей (data-model.md) — только datasource и generator.
+// Первая доменная фича добавит модели и первую миграцию.
+// Prisma 7: подключение задаётся не здесь, а через prisma.config.ts (CLI)
+// и driver-adapter в конструкторе PrismaClient (runtime).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

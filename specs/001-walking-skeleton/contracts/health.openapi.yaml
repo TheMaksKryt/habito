@@ -1,0 +1,61 @@
+openapi: 3.1.0
+info:
+  title: Habito API
+  version: 0.1.0
+  description: >
+    Walking-skeleton контракт. Единственный endpoint — проверка здоровья.
+    Реальный OpenAPI-документ генерируется Elysia (@elysiajs/openapi) из схем
+    кода и является источником истины; этот файл фиксирует ожидаемую форму
+    контракта для дизайна и ревью.
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Состояние API и его зависимостей
+      responses:
+        "200":
+          description: Все зависимости доступны
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+              example:
+                status: ok
+                version: 0.1.0
+                dependencies:
+                  database: up
+                  cache: up
+        "503":
+          description: Хотя бы одна зависимость недоступна
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+              example:
+                status: degraded
+                version: 0.1.0
+                dependencies:
+                  database: up
+                  cache: down
+components:
+  schemas:
+    HealthReport:
+      type: object
+      required: [status, version, dependencies]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+        dependencies:
+          type: object
+          required: [database, cache]
+          properties:
+            database:
+              type: string
+              enum: [up, down]
+            cache:
+              type: string
+              enum: [up, down]

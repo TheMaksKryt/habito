@@ -1,0 +1,58 @@
+# CI-гейты (Принцип VII конституции): каждый PR и push в main проходит
+# lint → typecheck → test с воспроизводимой установкой (--frozen-lockfile).
+# Отдельный job собирает оба Docker-образа без push — Dockerfile'ы проверяются
+# на каждом изменении и не гниют. Слияние в main блокируется branch protection
+# по обоим jobs (настройка — README, секция мейнтейнера).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bun run db:generate
+
+      - name: Generate API SDK from OpenAPI
+        run: bun run gen:api
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
+
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.app }} image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: false
+          cache-from: type=gha,scope=habito-${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=habito-${{ matrix.app }}
