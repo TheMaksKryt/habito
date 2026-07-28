@@ -1,50 +1,317 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+==================
+- Version change: (template, unversioned) → 1.0.0 — initial ratification
+- Modified principles: n/a (первичное принятие; все плейсхолдеры шаблона заменены)
+- Added sections:
+  - Core Principles I–VII
+  - Технологический стек и соглашения
+  - Деплой и эксплуатация
+  - Рабочий процесс
+  - Governance
+- Removed sections: none
+- Sources: архитектурный референс my-knowledge/migration/main-site (Nuxt slices,
+  Clean Architecture, contract-first SDK); деплой-модель my-knowledge/ranch
+  (everything-as-code, two-speed delivery); plan.md (стек и философия Habito);
+  решения сессии 2026-07-28 (Nuxt 4.5, Elysia вместо NestJS, отложенный TS 7).
+- Templates:
+  - .specify/templates/plan-template.md ✅ совместим (Constitution Check выводится
+    из этого файла динамически; правки не требуются)
+  - .specify/templates/spec-template.md ✅ совместим (технологически нейтрален)
+  - .specify/templates/tasks-template.md ⚠ обновлён: примечание о тестах приведено
+    в соответствие с Принципом VII (тесты домен-логики обязательны)
+  - .claude/skills/speckit-*/SKILL.md ✅ проверены, устаревших agent-specific
+    ссылок нет
+- Follow-up TODOs:
+  - plan.md рекомендует NestJS и pnpm — заменено на Elysia и Bun решением
+    пользователя от 2026-07-28; при следующей правке plan.md отразить это.
+-->
+
+# Habito Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Feature-Sliced модульность
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Код организуется вертикальными функциональными модулями (slices), а не техническими
+слоями верхнего уровня.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Frontend: каждый слайс — самостоятельный Nuxt layer со своим alias (`#feature`).
+  Инфраструктурные слайсы (api, error, i18n, theme, pinia) регистрируются в явном
+  порядке до функциональных; порядок загрузки задаётся кодом, а не соглашением.
+- Backend: каждый модуль соответствует предметной области и содержит собственные
+  слои (см. Принцип II).
+- Межмодульный доступ — ТОЛЬКО через публичную поверхность модуля: alias и barrel
+  (`index.ts`). Импорт внутренних файлов чужого модуля запрещён.
+- Зависимости между модулями однонаправленные; циклы запрещены.
+- Начинать с крупных слайсов и дробить только при явной причине — не наоборот.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Rationale: слайсы позволяют развивать, ревьюить и мигрировать функциональность
+изолированно; barrel-экспорты делают публичный контракт модуля явным.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Clean Architecture соразмерно сложности
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Внутри каждого модуля код разделяется на слои с однонаправленными зависимостями:
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- **domain** — типы/сущности, бизнес-правила, абстрактные интерфейсы шлюзов
+  (gateways) и репозиториев, доменные ошибки. Не зависит от фреймворка, ORM, HTTP
+  и внешних API.
+- **application / services** — use cases и оркестрация; зависят только от domain.
+- **data / infrastructure** — реализации шлюзов и репозиториев (SDK, Prisma,
+  Redis, очереди, push), мапперы DTO ↔ domain.
+- **presentation / UI** — контроллеры и request/response-схемы (backend);
+  stores, components, pages (frontend).
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Обязательные правила:
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- DI — через конструкторную инъекцию простых классов. Frontend: Nuxt
+  `provide`/`inject` в `plugins/di.ts`, типизация через `declare module '#app'`
+  в `index.d.ts` слайса; клиентские графы — в `di.client.ts`. Backend: явная
+  сборка графа в composition root модуля; DI-контейнер не требуется.
+- Интерфейсы шлюзов объявляются абстрактными классами — не нужны Symbol-токены.
+- Слои добавляются по мере необходимости: чисто презентационному модулю не нужен
+  domain, простому CRUD допустима компактная реализация. Архитектура НЕ ДОЛЖНА
+  быть сложнее текущих потребностей проекта.
+
+Rationale: бизнес-логика не должна зависеть от фреймворка (философия plan.md);
+plain-классы с инъекцией тривиально тестируются юнитами без моков фреймворка.
+
+### III. Contract-First API
+
+- OpenAPI-спецификация, генерируемая backend'ом, — единственный источник истины
+  контракта. Backend обязан публиковать актуальный OpenAPI-документ.
+- Frontend НЕ ПИШЕТ HTTP-вызовы вручную: типизированный SDK генерируется из
+  OpenAPI (`@hey-api/openapi-ts`), генерация встроена в dev/build pipeline.
+  Прямые `$fetch` к API запрещены; сгенерированный код не редактируется и
+  исключён из линтинга.
+- Все обращения к SDK идут через шлюзы (gateways). Мапперы переводят DTO
+  (snake_case, `null`) в доменные типы (camelCase, `undefined`); имена полей
+  backend'а не просачиваются выше data-слоя.
+- Сквозные аспекты HTTP (auth-заголовки, ETag-кэш, обработка 401, сериализация
+  параметров) реализуются интерцепторами/базовыми классами один раз, а не
+  повторяются в каждом вызове.
+
+Rationale: контракт как код устраняет расхождение frontend/backend; мапперы
+локализуют изменения API в одном слое.
+
+### IV. Строгая типобезопасность
+
+- TypeScript `strict: true` и `noUncheckedIndexedAccess: true` везде (frontend,
+  backend, packages).
+- `any` запрещён; на границах используется `unknown` с сужением типов.
+- `interface` — для форм объектов (доменные сущности с префиксом `I`); `type` —
+  для union'ов, алиасов и функциональных типов. Type-only импорты — всегда
+  `import type`.
+- Типы живут рядом со своим слоем (`domain/*.types.ts`), а не в глобальной папке.
+- Проверка типов (`typecheck`) — обязательный CI-гейт (см. Принцип VII).
+
+Rationale: строгие типы — основной механизм раннего обнаружения ошибок в проекте
+без ручного QA.
+
+### V. Единая обработка ошибок
+
+- Любая ошибка нормализуется НА ГРАНИЦЕ ДАННЫХ в единый тип (`ErrorEntity` с
+  `statusCode`, `code`, i18n-ключами): каждый шлюз выполняет вызовы через
+  `BaseGateway.execute()`, который прогоняет исключение через `ErrorMapper`.
+  Выше data-слоя другие типы ошибок не существуют.
+- Для ошибок, управляющих потоком (неверные креды, блокировка, 2FA), создаются
+  типизированные подклассы; ветвление — через `instanceof`, не через строки.
+- Глобальный обработчик один: реактивное состояние ошибки, toast (если ошибка
+  «шумная»), redirect по 401, отправка в Sentry. Подробное логирование PII —
+  только под `import.meta.dev`; `console` вырезается из prod-сборки.
+- Backend: доменные ошибки объявляются в domain, маппинг в HTTP-статусы — один
+  централизованный error handler в presentation-слое.
+- Списки после create/update/delete перезагружаются с сервера; ручная правка
+  элементов локального списка запрещена.
+
+Rationale: одна точка нормализации и одна точка обработки исключают расползание
+try/catch-боилерплейта и «тихие» несогласованные состояния.
+
+### VI. SSR-безопасность и дисциплина состояния
+
+Правила, каждое из которых предотвращает конкретный класс SSR-багов:
+
+- Экземпляры классов и Promise НЕ ХРАНЯТСЯ в состоянии Pinia (ломают devalue-
+  сериализацию при гидрации). Сервисы получаются через module-level getter с
+  `markRaw()` (`createServiceGetter`-паттерн).
+- Module-level `ref()` в composables запрещён — состояние утекает между
+  SSR-запросами; использовать `useState<T>(key, () => default)` либо
+  provide/inject через `InjectionKey<T>`.
+- Доступ к `window`/`document` — только под `import.meta.client` или в
+  `<ClientOnly>` с содержательным `#fallback`-скелетоном.
+- Stores: явные флаги `loaded`/`loading` (guard по `loaded`, не по
+  `array.length`); для коллекций — per-key loading maps; каждый
+  пользовательский store экспонирует `clear()`, вызываемый при login/logout.
+- Stores хранят серверные данные и оркестрацию загрузки; composables — UI-состояние
+  и производные значения. Смешивать ответственность запрещено.
+
+Rationale: каждый пункт закреплён после реального инцидента в референсном
+проекте; нарушение проявляется только под нагрузкой SSR и стоит дорого.
+
+### VII. Обязательные quality gates (NON-NEGOTIABLE)
+
+- Скрипты `lint`, `typecheck`, `test` СУЩЕСТВУЮТ С ПЕРВОГО КОММИТА каждого
+  workspace и выполняются в CI на каждый PR. Установка зависимостей — только
+  `--frozen-lockfile`.
+- Юнит-тесты ОБЯЗАТЕЛЬНЫ для домен-логики: use cases, services, mappers, utils
+  (в этой архитектуре они — plain-классы и функции, тестируемые без моков
+  фреймворка). UI-компоненты и e2e-тесты — по требованию спецификации фичи;
+  для критических пользовательских потоков e2e добавляются до релиза потока.
+- ESLint (flat config) + Prettier едины для всего монорепо; правила не
+  отключаются точечно без комментария-обоснования.
+- Сборка Docker-образа выполняется только после зелёного CI.
+
+Rationale: референсный проект не имел ни одного quality gate — это его главный
+выявленный дефицит, и он не воспроизводится.
+
+## Технологический стек и соглашения
+
+### Стек
+
+| Слой | Технология | Политика версий |
+|---|---|---|
+| Runtime / PM | Bun (workspaces) | актуальный стабильный 1.x |
+| Монорепо | `apps/web`, `apps/api`, `packages/*` | Turborepo — по необходимости |
+| Frontend | Nuxt `^4.5.1` (SSR), Vue 3.5+, Pinia (options stores) | миноры Nuxt обновляются без промедления |
+| UI | Tailwind CSS 4 (CSS-first, дизайн-токены в `@theme`), Reka UI / shadcn-vue, `cva` + `cn()` | — |
+| Формы | vee-validate + zod (`toTypedSchema`) | — |
+| Backend | Elysia на Bun, REST + `@elysiajs/openapi` | актуальный стабильный 1.x |
+| БД | PostgreSQL + Prisma (миграции Prisma) | raw SQL — только для аналитики |
+| Фоновые задачи | Redis + BullMQ | — |
+| Мониторинг | Sentry (web + api) с первого деплоя | — |
+
+- Elysia выбрана вместо NestJS (решение 2026-07-28): Bun-нативность, чистый TS
+  без legacy-декораторов (ранний путь к TS 7), OpenAPI из коробки. Недостающие
+  фреймворку соглашения (DI, слои) обеспечивают Принципы I–II.
+- PWA: `@vite-pwa/nuxt`, Web Push через VAPID; push-подписки отзываемы.
+
+### Политика версий TypeScript
+
+- Сейчас: последняя стабильная ветка TS 5.x/6.x, поставляемая с Nuxt.
+- TS 7 (нативный компилятор) внедряется поэтапно БЕЗ поправки конституции,
+  фиксируется записью в docs/:
+  - **Backend (Elysia)** — как только typescript-eslint поддержит TS 7
+    (Elysia — чистый TS, других блокеров нет);
+  - **Frontend (Nuxt/Vue)** — после выхода TS 7.1 со стабильным API и его
+    поддержки в vue-tsc/Volar (ожидается ~октябрь 2026).
+
+### Соглашения об именовании
+
+| Что | Правило | Пример |
+|---|---|---|
+| Файлы слоёв | `{entity}.{subtype}.ts` | `water.gateway.ts`, `meal.mapper.ts` |
+| Доменные типы | файл `{entity}.types.ts`, интерфейсы `I*` | `IWaterIntake` |
+| Интерфейс шлюза | абстрактный класс `I{Feature}Gateway` | `IWaterGateway` |
+| Реализация / сервис / маппер | `{Feature}Gateway/Service/Mapper` | `WaterService` |
+| Store | файл `{feature}.ts`, id = имя файла, хук `use{X}Store` | `defineStore("water")` |
+| Composable | `use*`, файл = имя функции; фабрики — `create*` | `useWaterProgress.ts` |
+| Компоненты | PascalCase, имя из пути; `index.vue` — корень группы | `<WaterCardHeader>` |
+| Маршруты | константы в `pages.ts` слайса, `as const`; строки путей в коде запрещены | `pages.dashboard` |
+| Константы | SCREAMING_SNAKE на уровне модуля | `DEFAULT_SERVING_ML` |
+| Provided-сервисы | `$camelCase` на NuxtApp | `$waterService` |
+| Emits | типизированные кортежи | `defineEmits<{ "update:modelValue": [v: boolean] }>()` |
+| i18n-ключи | snake_case, точечные неймспейсы | `water.goal_reached_title` |
+| Язык кода | идентификаторы и комментарии — английский; продуктовые документы — русский допустим | — |
+
+Props: без v-model — деструктуризация с дефолтами (Vue 3.5), без `withDefaults`;
+с v-model — `withDefaults` + `useVModel`; `computed({get,set})` для v-model
+запрещён. Auto-imports — по умолчанию; явные импорты только для типов, сторонних
+библиотек и cross-slice констант.
+
+### Конфигурация и секреты
+
+- «Build once, configure at start»: один образ для всех окружений. Конфигурация
+  читается через `useRuntimeConfig()` (никогда `import.meta.env`); каждый public-
+  ключ обязан иметь дефолт `?? ''` — иначе Nuxt отбросит ключ при сериализации и
+  runtime-переопределение `NUXT_PUBLIC_*` молча перестанет работать.
+- В репозитории — только `.env.example` с заведомо фейковыми значениями;
+  `.env*` в `.gitignore`. Секреты передаются только через переменные окружения
+  (CI secrets → env / k8s Secrets), никогда — в образ, state или tfvars.
+
+### Безопасность и приватность
+
+- Данные пользователя закрыты по умолчанию; API проверяет владельца КАЖДОГО
+  ресурса; социальные данные раскрываются только по явным настройкам приватности.
+- Security-заголовки (HSTS, `X-Content-Type-Options`, `Referrer-Policy`,
+  `Permissions-Policy`, COOP) — глобально в `routeRules`.
+- `window.open` — всегда `"noopener,noreferrer"`; сторонние iframe — `sandbox` +
+  `referrerpolicy` + allow-list; `postMessage`-слушатели валидируют
+  `event.origin` (никогда `*`); HTML из внешних источников — через DOMPurify.
+- Rate limiting на API; ограничение размера загружаемых файлов; логи с PII —
+  только в dev.
+
+## Деплой и эксплуатация
+
+### Принципы доставки
+
+- Всё деплоящееся описано кодом (Dockerfile, compose/k8s-манифесты, IaC);
+  вручную в окружении не создаётся ничего, кроме DNS-записей.
+- Docker-образы: multi-stage из корня монорепо; слой зависимостей
+  (`bun install --frozen-lockfile` по одним манифестам) — до копирования
+  исходников; slim runtime-база; версия внедряется через `ARG`.
+- **Two-speed delivery**: push в `main` собирает immutable образы с SHA-тегом и
+  НЕ деплоит; релиз — только по тегу `v*`, совпадающему с версией
+  `package.json`; только тег производит `:latest` и rollout.
+- Миграции БД выполняются шагом деплой-пайплайна тем же образом приложения
+  (initContainer в k8s / отдельный шаг в Compose); ручные миграции запрещены.
+- Каждый сервис экспонирует `/health`; у каждого контейнера — health checks
+  (readiness + liveness в k8s; `healthcheck` + `depends_on: service_healthy`
+  в Compose) и ограничения ресурсов.
+- Каждый деплой завершается smoke-тестом публичных URL с retry/backoff; упавший
+  rollout автоматически выгружает диагностику (describe, events, логи).
+- Изменения инфраструктуры: plan на PR, apply — только вручную; авто-apply
+  по коммиту запрещён.
+
+### Этапы инфраструктуры
+
+1. **MVP**: один сервер, Docker Compose (web, api, PostgreSQL, Redis,
+   Caddy/Nginx с HTTPS). Обязательно с первого дня: автодеплой по тегу, бэкапы
+   PostgreSQL с retention и ЗАДОКУМЕНТИРОВАННЫМ restore-плейбуком, health
+   checks, Sentry.
+2. **Рост**: managed PostgreSQL/Redis, объектное хранилище, CDN, отдельный
+   worker для очередей.
+3. **Масштаб**: Kubernetes по модели ranch (Terraform с remote state,
+   GitOps/ArgoCD, CNPG с бэкапами в объектное хранилище).
+
+Переход на следующий этап — по фактической потребности, не заранее.
+
+### Наблюдаемость
+
+- Sentry на frontend и backend с первого деплоя; структурированные логи;
+  метрики (Prometheus endpoint) — при появлении инфраструктуры сбора.
+- Периодические задачи — через планировщик очередей (BullMQ repeatable) или
+  CronJob с `concurrencyPolicy: Forbid`, не через in-process таймеры.
+
+## Рабочий процесс
+
+- **Живой архитектурный документ** (CLAUDE.md в корне кода): каждое правило
+  формулируется вместе с failure mode, который оно предотвращает («почему»);
+  содержит пошаговый рецепт добавления модуля и инвентарь общих
+  утилит/composables с пометкой «не пересоздавать — сначала импортируй».
+- **Миграционная политика** при изменении паттернов: новый код — сразу по
+  паттерну; затронутый код — мигрируется в том же изменении; фоновая миграция —
+  один слайс на PR, никогда не смешивается с фичами.
+- Общие базовые классы/фабрики создаются после того, как дублирование измерено
+  (3+ повторения), и документируются с указанием заменяемого анти-паттерна.
+- Коммиты — Conventional Commits (`feat(scope): ...`); смешанные стили
+  запрещены.
+- Дизайн-решения фиксируются датированными документами в `docs/`
+  (`YYYY-MM-DD-topic.md`).
+- Функциональность проходит spec-kit цикл: specify → clarify → plan (с
+  Constitution Check) → tasks → implement.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- Конституция превалирует над всеми прочими практиками и документами проекта.
+- **Поправки**: отдельным изменением с обоснованием; версия — по semver:
+  MAJOR — несовместимое удаление/переопределение принципов; MINOR — новый
+  принцип или существенное расширение; PATCH — уточнения формулировок.
+  Поправка обязана синхронизировать зависимые шаблоны `.specify/templates/*`.
+- **Соответствие**: каждый implementation plan проходит Constitution Check до
+  начала работ и повторно после дизайна; отступления допускаются только через
+  Complexity Tracking с обоснованием, почему более простая альтернатива
+  недостаточна.
+- Выбор конкретных версий инструментов (например, переход на TS 7 по описанным
+  критериям) не требует поправки — фиксируется записью в `docs/`.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-07-28 | **Last Amended**: 2026-07-28

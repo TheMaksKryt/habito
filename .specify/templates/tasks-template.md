@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Per Constitution Principle VII, unit tests for domain logic (use cases, services, mappers, utils) are REQUIRED and must be included as tasks. UI-component and e2e tests are optional unless the feature spec requests them; e2e tests for critical user flows must land before that flow ships.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
