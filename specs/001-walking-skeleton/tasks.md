@@ -80,8 +80,8 @@ description: "Task list for Walking Skeleton implementation"
 ### Implementation for User Story 2
 
 - [X] T021 [US2] Написать `.github/workflows/ci.yaml`: on PR + push в main; job `quality` — `bun install --frozen-lockfile` → `bun run db:generate` (api) → `bun run lint` → `bun run typecheck` → `bun run test`; job `images` — `docker build` обоих Dockerfile из корня (без push); суммарно ≤ 10 минут (SC-004)
-- [ ] T022 [US2] Включить branch protection для `main` (required status checks: `quality`, `images`) через `gh api` или настройки репозитория; команду/шаги задокументировать в README (секция для мейнтейнера) — ⏳ команда задокументирована в README; применить можно только после первого push в TheMaksKryt/habito
-- [ ] T023 [US2] Негативная валидация гейтов: PR с намеренной ошибкой типов — CI красный, слияние заблокировано; исправление — CI зелёный; результат зафиксировать в PR-описании (US2-приёмки 1–3) — ⏳ локальная часть выполнена 2026-07-28 (битый код валит typecheck, чистый проходит); PR-часть — после первого push и включения branch protection
+- [ ] T022 [US2] Включить branch protection для `main` (required status checks: `quality`, `images`) через `gh api` или настройки репозитория; команду/шаги задокументировать в README (секция для мейнтейнера) — ⏳ ЗАБЛОКИРОВАНО ПЛАНОМ GITHUB (2026-07-29): branch protection на приватных репо требует GitHub Pro; варианты — сделать репо публичным или апгрейд плана; команда и веб-шаги готовы в README, точные имена чеков: `quality`, `images (api)`, `images (web)`
+- [X] T023 [US2] Негативная валидация гейтов: PR с намеренной ошибкой типов — CI красный, слияние заблокировано; исправление — CI зелёный; результат зафиксировать в PR-описании (US2-приёмки 1–3) — ✅ 2026-07-29, PR #1: битый коммит → `quality` fail за 23 s (merge state UNSTABLE), revert → все чеки pass (CLEAN), squash-merge; enforced-блокировка слияния появится вместе с T022
 
 **Checkpoint**: US1 и US2 работают независимо друг от друга
 
