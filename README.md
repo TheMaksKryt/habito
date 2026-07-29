@@ -83,15 +83,24 @@ bun run db:generate # Prisma client
 После создания репозитория на GitHub включите обязательные проверки для `main`:
 
 ```bash
-gh api repos/{owner}/{repo}/branches/main/protection -X PUT \
+# имена чеков matrix-job — «images (api)» и «images (web)», не «images»
+gh api repos/TheMaksKryt/habito/branches/main/protection -X PUT \
   -H "Accept: application/vnd.github+json" \
-  -f "required_status_checks[strict]=true" \
-  -f "required_status_checks[contexts][]=quality" \
-  -f "required_status_checks[contexts][]=images" \
-  -F "enforce_admins=true" \
-  -F "required_pull_request_reviews=null" \
-  -F "restrictions=null"
+  --input - <<'JSON'
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["quality", "images (api)", "images (web)"]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
 ```
+
+Либо через веб: Settings → Branches → Add branch protection rule → `main` →
+Require status checks: `quality`, `images (api)`, `images (web)`.
 
 ## Структура
 
