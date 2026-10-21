@@ -50,7 +50,7 @@
 </p>
 
 Продуктовый план целиком — [plan.md](plan.md), архитектурные правила —
-[конституция](.specify/memory/constitution.md), техническая документация для
+[конституция](docs/constitution.md), техническая документация для
 агентов и разработчиков — [CLAUDE.md](CLAUDE.md).
 
 **Текущее состояние**: walking skeleton — каркас (монорепо, web, api, хранилища,
@@ -157,8 +157,11 @@ apps/web       Nuxt 4.5 (SSR, PWA в будущем)
 apps/api       Elysia + Prisma + ioredis
 packages/      будущие общие пакеты
 scripts/dev.ts dev-оркестратор (bun dev)
-specs/         spec-kit артефакты фич (spec → plan → tasks)
+docs/          конституция и дизайн-решения
+specs/         архив артефактов walking skeleton (spec → plan → tasks)
 ```
 
-Рабочий процесс фич: `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` →
-`/speckit-implement` (см. конституцию, раздел «Рабочий процесс»).
+Агентный харнес — [ECC](https://github.com/affaan-m/ECC): плагин `ecc@ecc`
+включён для репозитория через `.claude/settings.json` (marketplace подхватится
+автоматически). Рабочий процесс фич: `/plan` → реализация через TDD →
+`/code-review` (см. конституцию, раздел «Рабочий процесс»).
