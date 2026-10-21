@@ -93,6 +93,11 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
   `app.handle()` без сети.
 - web — Vitest + `@nuxt/test-utils` (environment: nuxt), SDK мокается через
   `vi.mock('~~/generated/api')`.
+- web e2e — Playwright ([apps/web/e2e](apps/web/e2e), `bun run --filter web test:e2e`)
+  поверх поднятого `bun dev` или `docker compose up`: SDK не мокается, проверяется реальная цепочка
+  SSR → SDK → API. Запускается вручную, в CI не входит — e2e добавляются в CI
+  вместе с первым критическим пользовательским потоком (Принцип VII).
+  `E2E_BASE_URL` переопределяет адрес web (по умолчанию http://localhost:3000).
 - Юнит-тесты домен-логики обязательны (Принцип VII); тесты пишутся до или
   вместе с кодом, CI не пропустит их отсутствие для нового модуля с логикой.
 

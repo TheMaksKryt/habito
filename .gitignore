@@ -25,3 +25,7 @@ Thumbs.db
 *.tmp
 .idea/
 .vscode/
+
+# Playwright (apps/web: bun run test:e2e)
+playwright-report/
+test-results/
