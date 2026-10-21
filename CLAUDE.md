@@ -11,12 +11,37 @@
 bun dev [api|web] [--no-test]  # dev-оркестратор: хранилища + серверы + hot-reload
 docker compose up --build -d   # полный production-like стек
 bun run lint | typecheck | test | format
+bun run check                  # всё как в CI: generate → lint → typecheck → test
+bunx lefthook run pre-commit   # хуки вручную: pre-commit (staged lint/format) | pre-push (check)
+bun run test:coverage          # тесты с покрытием + таблица (в CI — в job summary, без порога)
 bun run gen:api                # OpenAPI из api → SDK в web
 bun run db:generate            # Prisma client
 ```
 
 Установка зависимостей — только `bun install --frozen-lockfile` (CI падает при
 рассинхроне lock-файла).
+
+## Проверки
+
+Один контур, одна команда: `bun run check` локально = job `quality` в CI.
+Правила с «почему» (LF, `check`, хуки) — в разделе ниже; здесь карта.
+
+| Проверка                                    | Как запускается                                                 | Когда                                              |
+| ------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------- |
+| eslint + prettier по staged-файлам          | pre-commit (Lefthook, ~1–2 с)                                   | каждый `git commit`                                |
+| `check`: generate → lint → typecheck → test | `bun run check`; pre-push (Lefthook); CI `quality`              | перед push, каждый PR                              |
+| coverage (lines/functions, api + web)       | `bun run test:coverage`; CI `quality` → Summary                 | отчёт, не гейт; порог — после домен-логики         |
+| pre-flight тесты                            | `bun dev` (обход: `--no-test`)                                  | старт dev-серверов                                 |
+| Сборка Docker-образов                       | CI `images (api)`, `images (web)`                               | каждый PR                                          |
+| `/health` живого стека                      | `docker compose up -d` → `curl localhost:3333/health`           | перед PR, после правок api/compose                 |
+| e2e Playwright                              | `bun run --filter web test:e2e` на поднятом стеке; CI job `e2e` | изменения UI (фильтр путей в ci.yaml), не required |
+
+**Агент `cto`** ([.claude/agents/cto.md](.claude/agents/cto.md)) прогоняет
+всё это в фоне и возвращает таблицу гейтов с вердиктом GO/NO-GO и первой
+ошибкой — без логов в контексте. Вызов: `@agent-cto прогони проверки` или
+«используй субагента cto параллельно». Агент ничего не правит, не коммитит и
+не трогает Docker-стек: если стек не поднят, health/e2e помечаются `skip`.
+Красный `check` чинит основная сессия (или `/ecc:build-fix`).
 
 ## Структура
 
@@ -88,6 +113,23 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
 - **`no-undef` выключен для .ts/.vue** в ESLint: Nuxt auto-imports дают ложные
   срабатывания, неопределённые идентификаторы ловит tsc (рекомендация
   typescript-eslint).
+- **Переводы строк — LF через `.gitattributes` (`eol=lf`)**, Prettier с
+  `endOfLine: lf`: с `core.autocrlf=true` на Windows checkout давал CRLF, и
+  `prettier --check` красил все файлы без единой ошибки в коде, тогда как CI
+  на Linux был зелёным. После смены атрибутов рабочую копию перевыдают
+  `git rm -rf --cached . && git reset --hard HEAD` (только в чистом дереве).
+- **`bun run check` — единственная «проверка как в CI»**: job `quality`
+  вызывает ровно её, поэтому зелёный локальный `check` означает зелёный CI
+  по этому job. Отдельные `lint`/`typecheck`/`test` — для быстрых итераций.
+- **Git-хуки — Lefthook, ставятся из `bun install` собственным
+  `postinstall` ([scripts/install-hooks.ts](scripts/install-hooks.ts))**: Bun
+  не исполняет postinstall зависимостей, поэтому штатная установка пакета
+  `lefthook` хуки бы не создала. pre-commit гоняет eslint/prettier только по
+  staged-файлам (≤10 с), pre-push — полный `bun run check`. Экстренный обход —
+  `LEFTHOOK=0 git commit`, не `--no-verify`. Хуки общие для всех worktree:
+  если в worktree нет `node_modules/lefthook-*`, хук печатает «Can't find
+  lefthook» и пропускает проверку — после мержа сделать `bun install` в
+  каждом.
 
 ## Тесты
 
@@ -97,9 +139,11 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
   `vi.mock('~~/generated/api')`.
 - web e2e — Playwright ([apps/web/e2e](apps/web/e2e), `bun run --filter web test:e2e`)
   поверх поднятого `bun dev` или `docker compose up`: SDK не мокается, проверяется реальная цепочка
-  SSR → SDK → API. Запускается вручную, в CI не входит — e2e добавляются в CI
-  вместе с первым критическим пользовательским потоком (Принцип VII).
-  `E2E_BASE_URL` переопределяет адрес web (по умолчанию http://localhost:3000).
+  SSR → SDK → API. В CI — job `e2e` при изменениях UI (список путей в
+  `.github/workflows/ci.yaml`), не блокирует merge; новые спеки — вместе с
+  первым критическим потоком (Принцип VII). Локально один раз
+  `bunx playwright install chromium`. `E2E_BASE_URL` переопределяет адрес web
+  (по умолчанию http://localhost:3000).
 - Юнит-тесты домен-логики обязательны (Принцип VII); тесты пишутся до или
   вместе с кодом, CI не пропустит их отсутствие для нового модуля с логикой.
 

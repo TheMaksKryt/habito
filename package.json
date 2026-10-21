@@ -9,19 +9,25 @@
   ],
   "scripts": {
     "dev": "bun scripts/dev.ts",
+    "postinstall": "bun scripts/install-hooks.ts",
     "gen:api": "bun run --filter api openapi:export && bun run --filter web generate:api",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "typecheck": "bun run --filter '*' typecheck",
-    "test": "bun run --filter '*' test",
+    "typecheck": "bun run --filter '*' typecheck && tsc -p scripts",
+    "test": "bun run --filter '*' test && bun test scripts",
+    "test:coverage": "bun run --filter '*' test:coverage && bun scripts/coverage-summary.ts",
+    "check": "bun run db:generate && bun run gen:api && bun run lint && bun run typecheck && bun run test",
+    "hooks": "lefthook install",
     "db:generate": "bun run --filter api db:generate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/bun": "^1.4.3",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.11.1",
     "globals": "^17.13.0",
+    "lefthook": "^2.2.2",
     "prettier": "^3.9.10",
     "typescript": "^6",
     "typescript-eslint": "^8.72.0"

@@ -1,0 +1,13 @@
+# LF везде: CI и Docker — Linux, а core.autocrlf=true на Windows выдавал CRLF в
+# рабочую копию и красил Prettier (endOfLine: lf) на всех файлах без ошибок в коде.
+* text=auto eol=lf
+
+# Бинарники — без нормализации и диффов
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
