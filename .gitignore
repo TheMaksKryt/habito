@@ -13,9 +13,10 @@ dist/
 build/
 coverage/
 
-# Сгенерированный код (воссоздаётся: bun run gen:api / db:generate)
+# Сгенерированный код (воссоздаётся: bun run gen:api / db:generate).
+# apps/api/openapi.json — исключение: контракт трекается, чтобы изменения API
+# были видны в diff PR; свежесть проверяет `bun run check` (git diff --exit-code)
 apps/web/generated/
-apps/api/openapi.json
 apps/api/generated/
 
 # Служебное
