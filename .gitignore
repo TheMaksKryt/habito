@@ -25,3 +25,6 @@ Thumbs.db
 *.tmp
 .idea/
 .vscode/
+
+# Личные переопределения хуков (lefthook-local.yml — merge поверх lefthook.yml)
+lefthook-local.yml

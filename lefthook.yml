@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://lefthook.dev/schema.json
+# Git-хуки (Принцип VII): pre-commit — быстрые проверки только staged-файлов,
+# pre-push — полный `bun run check`, та же команда, что CI job quality.
+# Обход в экстренном случае: LEFTHOOK=0 git commit (не --no-verify — он глушит
+# и будущие хуки). Личные переопределения — lefthook-local.yml (в .gitignore).
+min_version: 2.0.0
+
+pre-commit:
+  parallel: true
+  skip:
+    - merge
+    - rebase
+  jobs:
+    # Шаблон {staged_files} без кавычек: lefthook сам берёт имена с пробелами в
+    # одинарные кавычки, а двойные ломаются на Windows — команда целиком идёт в
+    # sh -c "…" (проверено на images/Habito Play-selection.png)
+    - name: eslint
+      glob: '*.{ts,mjs,vue}'
+      # --no-warn-ignored: явно переданный файл из ignores (generated/) — не warning
+      run: bunx eslint --no-warn-ignored {staged_files}
+    - name: prettier
+      # --ignore-unknown: png/lock и прочее без парсера не считаются ошибкой
+      run: bunx prettier --check --ignore-unknown {staged_files}
+
+pre-push:
+  jobs:
+    - name: check
+      run: bun run check

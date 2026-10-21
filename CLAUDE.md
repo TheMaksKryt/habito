@@ -12,6 +12,7 @@ bun dev [api|web] [--no-test]  # dev-оркестратор: хранилища 
 docker compose up --build -d   # полный production-like стек
 bun run lint | typecheck | test | format
 bun run check                  # всё как в CI: generate → lint → typecheck → test
+bunx lefthook run pre-commit   # хуки вручную: pre-commit (staged lint/format) | pre-push (check)
 bun run gen:api                # OpenAPI из api → SDK в web
 bun run db:generate            # Prisma client
 ```
@@ -95,6 +96,15 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
 - **`bun run check` — единственная «проверка как в CI»**: job `quality`
   вызывает ровно её, поэтому зелёный локальный `check` означает зелёный CI
   по этому job. Отдельные `lint`/`typecheck`/`test` — для быстрых итераций.
+- **Git-хуки — Lefthook, ставятся из `bun install` собственным
+  `postinstall` ([scripts/install-hooks.ts](scripts/install-hooks.ts))**: Bun
+  не исполняет postinstall зависимостей, поэтому штатная установка пакета
+  `lefthook` хуки бы не создала. pre-commit гоняет eslint/prettier только по
+  staged-файлам (≤10 с), pre-push — полный `bun run check`. Экстренный обход —
+  `LEFTHOOK=0 git commit`, не `--no-verify`. Хуки общие для всех worktree:
+  если в worktree нет `node_modules/lefthook-*`, хук печатает «Can't find
+  lefthook» и пропускает проверку — после мержа сделать `bun install` в
+  каждом.
 
 ## Тесты
 
