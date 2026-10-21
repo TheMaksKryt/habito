@@ -11,6 +11,7 @@
 bun dev [api|web] [--no-test]  # dev-оркестратор: хранилища + серверы + hot-reload
 docker compose up --build -d   # полный production-like стек
 bun run lint | typecheck | test | format
+bun run check                  # всё как в CI: generate → lint → typecheck → test
 bun run gen:api                # OpenAPI из api → SDK в web
 bun run db:generate            # Prisma client
 ```
@@ -86,6 +87,14 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
 - **`no-undef` выключен для .ts/.vue** в ESLint: Nuxt auto-imports дают ложные
   срабатывания, неопределённые идентификаторы ловит tsc (рекомендация
   typescript-eslint).
+- **Переводы строк — LF через `.gitattributes` (`eol=lf`)**, Prettier с
+  `endOfLine: lf`: с `core.autocrlf=true` на Windows checkout давал CRLF, и
+  `prettier --check` красил все файлы без единой ошибки в коде, тогда как CI
+  на Linux был зелёным. После смены атрибутов рабочую копию перевыдают
+  `git rm -rf --cached . && git reset --hard HEAD` (только в чистом дереве).
+- **`bun run check` — единственная «проверка как в CI»**: job `quality`
+  вызывает ровно её, поэтому зелёный локальный `check` означает зелёный CI
+  по этому job. Отдельные `lint`/`typecheck`/`test` — для быстрых итераций.
 
 ## Тесты
 

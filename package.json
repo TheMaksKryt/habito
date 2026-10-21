@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test",
+    "check": "bun run db:generate && bun run gen:api && bun run lint && bun run typecheck && bun run test",
     "db:generate": "bun run --filter api db:generate"
   },
   "devDependencies": {

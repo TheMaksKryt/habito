@@ -1,5 +1,6 @@
 # CI-гейты (Принцип VII конституции): каждый PR и push в main проходит
-# lint → typecheck → test с воспроизводимой установкой (--frozen-lockfile).
+# `bun run check` (та же команда, что локально: generate → lint → typecheck →
+# test) с воспроизводимой установкой (--frozen-lockfile).
 # Отдельный job собирает оба Docker-образа без push — Dockerfile'ы проверяются
 # на каждом изменении и не гниют. Слияние в main блокируется branch protection
 # по обоим jobs (настройка — README, секция мейнтейнера).
@@ -9,6 +10,12 @@ on:
   pull_request:
   push:
     branches: [main]
+
+# Новый push в ту же ветку/PR отменяет незавершённый прогон — агентские
+# сессии пушат часто, очередь из устаревших прогонов бесполезна
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -23,20 +30,8 @@ jobs:
       - name: Install (frozen lockfile)
         run: bun install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: bun run db:generate
-
-      - name: Generate API SDK from OpenAPI
-        run: bun run gen:api
-
-      - name: Lint
-        run: bun run lint
-
-      - name: Typecheck
-        run: bun run typecheck
-
-      - name: Test
-        run: bun run test
+      - name: Check (same command as local `bun run check`)
+        run: bun run check
 
   images:
     runs-on: ubuntu-latest
