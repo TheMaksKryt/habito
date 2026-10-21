@@ -47,7 +47,7 @@ bun run db:generate            # Prisma client
 
 ```text
 apps/api   Elysia на Bun: src/modules/<module>/, src/config.ts, src/app.ts, src/index.ts
-apps/web   Nuxt 4.5 (SSR, nitro-bun): app/, generated/api (SDK, не редактировать)
+apps/web   Nuxt 4.6 (SSR, nitro-bun): app/, generated/api (SDK, не редактировать)
 packages/  будущие общие пакеты
 scripts/   dev.ts — оркестратор bun dev
 docs/      конституция и датированные дизайн-решения
