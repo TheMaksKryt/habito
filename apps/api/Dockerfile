@@ -3,7 +3,7 @@
 # Слой зависимостей ставится по одним манифестам (до копирования исходников) —
 # кэш переживает любые правки кода (конвенция ranch).
 
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.4.3 AS builder
 WORKDIR /build
 
 COPY package.json bun.lock ./
@@ -16,7 +16,7 @@ COPY tsconfig.json ./
 COPY apps/api apps/api
 RUN cd apps/api && bunx prisma generate
 
-FROM oven/bun:1-slim
+FROM oven/bun:1.4.3-slim
 ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
 WORKDIR /app

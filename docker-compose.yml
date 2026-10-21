@@ -2,7 +2,7 @@ name: habito
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-habito}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-change-me}
@@ -12,8 +12,11 @@ services:
       # проектом; внутри compose-сети api ходит на postgres:5432 независимо от него
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
-      # named volume: данные переживают down/up (без -v) — SC-006
-      - postgres-data:/var/lib/postgresql/data
+      # named volume: данные переживают down/up (без -v) — SC-006.
+      # Postgres 18+ хранит кластер в /var/lib/postgresql/<major>/docker: монтируем
+      # родительский каталог, иначе образ отказывается стартовать и ломается
+      # будущий pg_upgrade --link между мажорами
+      - postgres-data:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-habito} -d ${POSTGRES_DB:-habito}']
       interval: 5s

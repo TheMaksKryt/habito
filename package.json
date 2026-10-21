@@ -1,6 +1,7 @@
 {
   "name": "habito",
   "private": true,
+  "packageManager": "bun@1.4.3",
   "type": "module",
   "workspaces": [
     "apps/*",
@@ -17,12 +18,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.8.0",
+    "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-vue": "^10.10.0",
-    "globals": "^17.8.0",
-    "prettier": "^3.9.6",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
     "typescript": "^6",
-    "typescript-eslint": "^8.65.0"
+    "typescript-eslint": "^8.72.0"
   }
 }

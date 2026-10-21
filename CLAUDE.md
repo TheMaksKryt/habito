@@ -1,7 +1,7 @@
 # CLAUDE.md — Habito
 
 Живой архитектурный документ: правила кода этого репозитория и «почему» за
-каждым из них. Полные принципы — в [конституции](.specify/memory/constitution.md)
+каждым из них. Полные принципы — в [конституции](docs/constitution.md)
 (она главнее); продуктовое видение — в [plan.md](plan.md). Здесь — только то,
 что реально существует в коде сейчас.
 
@@ -25,7 +25,9 @@ apps/api   Elysia на Bun: src/modules/<module>/, src/config.ts, src/app.ts, sr
 apps/web   Nuxt 4.5 (SSR, nitro-bun): app/, generated/api (SDK, не редактировать)
 packages/  будущие общие пакеты
 scripts/   dev.ts — оркестратор bun dev
-specs/     spec-kit артефакты (constitution check в каждом plan.md)
+docs/      конституция и датированные дизайн-решения
+specs/     архив артефактов walking skeleton (spec → plan → tasks; spec-kit снят)
+.claude/   settings.json — включает плагин ECC (ecc@ecc) для этого репо
 ```
 
 - api: `createApp()` (src/app.ts) отделён от `listen` (src/index.ts) — один граф
