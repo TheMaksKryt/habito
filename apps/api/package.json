@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "test:coverage": "bun test --coverage",
     "db:generate": "prisma generate",
     "openapi:export": "bun scripts/export-openapi.ts"
   },

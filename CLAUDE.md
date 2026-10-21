@@ -13,6 +13,7 @@ docker compose up --build -d   # полный production-like стек
 bun run lint | typecheck | test | format
 bun run check                  # всё как в CI: generate → lint → typecheck → test
 bunx lefthook run pre-commit   # хуки вручную: pre-commit (staged lint/format) | pre-push (check)
+bun run test:coverage          # тесты с покрытием + таблица (в CI — в job summary, без порога)
 bun run gen:api                # OpenAPI из api → SDK в web
 bun run db:generate            # Prisma client
 ```
@@ -25,14 +26,15 @@ bun run db:generate            # Prisma client
 Один контур, одна команда: `bun run check` локально = job `quality` в CI.
 Правила с «почему» (LF, `check`, хуки) — в разделе ниже; здесь карта.
 
-| Проверка                                    | Как запускается                                       | Когда                              |
-| ------------------------------------------- | ----------------------------------------------------- | ---------------------------------- |
-| eslint + prettier по staged-файлам          | pre-commit (Lefthook, ~1–2 с)                         | каждый `git commit`                |
-| `check`: generate → lint → typecheck → test | `bun run check`; pre-push (Lefthook); CI `quality`    | перед push, каждый PR              |
-| pre-flight тесты                            | `bun dev` (обход: `--no-test`)                        | старт dev-серверов                 |
-| Сборка Docker-образов                       | CI `images (api)`, `images (web)`                     | каждый PR                          |
-| `/health` живого стека                      | `docker compose up -d` → `curl localhost:3333/health` | перед PR, после правок api/compose |
-| e2e Playwright                              | `bun run --filter web test:e2e` на поднятом стеке     | изменения UI (в CI — Фаза 4)       |
+| Проверка                                    | Как запускается                                       | Когда                                      |
+| ------------------------------------------- | ----------------------------------------------------- | ------------------------------------------ |
+| eslint + prettier по staged-файлам          | pre-commit (Lefthook, ~1–2 с)                         | каждый `git commit`                        |
+| `check`: generate → lint → typecheck → test | `bun run check`; pre-push (Lefthook); CI `quality`    | перед push, каждый PR                      |
+| coverage (lines/functions, api + web)       | `bun run test:coverage`; CI `quality` → Summary       | отчёт, не гейт; порог — после домен-логики |
+| pre-flight тесты                            | `bun dev` (обход: `--no-test`)                        | старт dev-серверов                         |
+| Сборка Docker-образов                       | CI `images (api)`, `images (web)`                     | каждый PR                                  |
+| `/health` живого стека                      | `docker compose up -d` → `curl localhost:3333/health` | перед PR, после правок api/compose         |
+| e2e Playwright                              | `bun run --filter web test:e2e` на поднятом стеке     | изменения UI (в CI — Фаза 4)               |
 
 **Агент `cto`** ([.claude/agents/cto.md](.claude/agents/cto.md)) прогоняет
 всё это в фоне и возвращает таблицу гейтов с вердиктом GO/NO-GO и первой

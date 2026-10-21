@@ -1,0 +1,6 @@
+# Coverage как отчёт (Phase 5 quality-gates): text в терминал, lcov для сводки
+# scripts/coverage-summary.ts. Включается только флагом --coverage
+# (bun run test:coverage), обычный `bun test` не замедляется. Порога нет.
+[test]
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"

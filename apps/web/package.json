@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "generate:api": "openapi-ts && bun scripts/patch-generated.ts"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
     "@nuxt/test-utils": "^4.1.0",
+    "@vitest/coverage-v8": "4.1.10",
     "@vue/test-utils": "^2.4.11",
     "happy-dom": "^20.11.1",
     "vitest": "^4.1.10",

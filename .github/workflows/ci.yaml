@@ -33,6 +33,14 @@ jobs:
       - name: Check (same command as local `bun run check`)
         run: bun run check
 
+      # Отчёт, не гейт: порог покрытия появится вместе с домен-логикой.
+      # Таблица — в Summary этого job (scripts/coverage-summary.ts).
+      - name: Coverage report (informational, no threshold)
+        continue-on-error: true
+        run: |
+          bun run --filter '*' test:coverage
+          bun scripts/coverage-summary.ts >> "$GITHUB_STEP_SUMMARY"
+
   images:
     runs-on: ubuntu-latest
     strategy:
