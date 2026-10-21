@@ -28,3 +28,7 @@ Thumbs.db
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# Playwright (apps/web: bun run test:e2e)
+playwright-report/
+test-results/
