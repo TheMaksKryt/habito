@@ -8,9 +8,8 @@ apps/api/generated/
 apps/api/openapi.json
 bun.lock
 
-# Спек-артефакты и документы (spec-kit управляет их форматом сам)
+# Архив spec-артефактов и документы (формат не трогаем)
 specs/
-.specify/
 .claude/
 plan.md
 images/
