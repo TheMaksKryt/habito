@@ -1,30 +1,28 @@
 <!--
 Sync Impact Report
 ==================
-- Version change: (template, unversioned) → 1.0.0 — initial ratification
-- Modified principles: n/a (первичное принятие; все плейсхолдеры шаблона заменены)
-- Added sections:
-  - Core Principles I–VII
-  - Технологический стек и соглашения
-  - Деплой и эксплуатация
-  - Рабочий процесс
-  - Governance
+- Version change: 1.0.0 → 1.1.0 — агентный харнес spec-kit заменён на ECC
+- Modified principles: none (I–VII без изменений)
+- Modified sections:
+  - Рабочий процесс: spec-kit цикл (specify → clarify → plan → tasks →
+    implement) заменён на ECC-процесс (/plan → TDD → /code-review);
+    Constitution Check сохранён как обязательный шаг плана
+  - Governance: обязанность синхронизировать .specify/templates/* снята
+    (шаблонов больше нет); Constitution Check привязан к плану ECC
 - Removed sections: none
-- Sources: архитектурный референс my-knowledge/migration/main-site (Nuxt slices,
-  Clean Architecture, contract-first SDK); деплой-модель my-knowledge/ranch
-  (everything-as-code, two-speed delivery); plan.md (стек и философия Habito);
-  решения сессии 2026-07-28 (Nuxt 4.5, Elysia вместо NestJS, отложенный TS 7).
-- Templates:
-  - .specify/templates/plan-template.md ✅ совместим (Constitution Check выводится
-    из этого файла динамически; правки не требуются)
-  - .specify/templates/spec-template.md ✅ совместим (технологически нейтрален)
-  - .specify/templates/tasks-template.md ⚠ обновлён: примечание о тестах приведено
-    в соответствие с Принципом VII (тесты домен-логики обязательны)
-  - .claude/skills/speckit-*/SKILL.md ✅ проверены, устаревших agent-specific
-    ссылок нет
+- Location: файл перенесён из .specify/memory/constitution.md в
+  docs/constitution.md (ссылки в CLAUDE.md и README обновлены)
+- Templates: n/a — .specify/ и .claude/skills/speckit-* удалены; ECC
+  подключён как плагин ecc@ecc (user scope + .claude/settings.json проекта)
 - Follow-up TODOs:
   - plan.md рекомендует NestJS и pnpm — заменено на Elysia и Bun решением
     пользователя от 2026-07-28; при следующей правке plan.md отразить это.
+  - specs/001-walking-skeleton/ оставлен как архив; его ссылки на /speckit-*
+    команды — исторические.
+- Previous report (1.0.0, 2026-07-28): initial ratification — Core Principles
+  I–VII, стек, деплой, рабочий процесс, governance; источники — референс
+  main-site (Nuxt slices, Clean Architecture, contract-first SDK), деплой-модель
+  ranch, plan.md, решения сессии 2026-07-28 (Nuxt 4.5, Elysia, отложенный TS 7).
 -->
 
 # Habito Constitution
@@ -168,17 +166,17 @@ Rationale: референсный проект не имел ни одного q
 
 ### Стек
 
-| Слой | Технология | Политика версий |
-|---|---|---|
-| Runtime / PM | Bun (workspaces) | актуальный стабильный 1.x |
-| Монорепо | `apps/web`, `apps/api`, `packages/*` | Turborepo — по необходимости |
-| Frontend | Nuxt `^4.5.1` (SSR), Vue 3.5+, Pinia (options stores) | миноры Nuxt обновляются без промедления |
-| UI | Tailwind CSS 4 (CSS-first, дизайн-токены в `@theme`), Reka UI / shadcn-vue, `cva` + `cn()` | — |
-| Формы | vee-validate + zod (`toTypedSchema`) | — |
-| Backend | Elysia на Bun, REST + `@elysiajs/openapi` | актуальный стабильный 1.x |
-| БД | PostgreSQL + Prisma (миграции Prisma) | raw SQL — только для аналитики |
-| Фоновые задачи | Redis + BullMQ | — |
-| Мониторинг | Sentry (web + api) с первого деплоя | — |
+| Слой           | Технология                                                                                 | Политика версий                         |
+| -------------- | ------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Runtime / PM   | Bun (workspaces)                                                                           | актуальный стабильный 1.x               |
+| Монорепо       | `apps/web`, `apps/api`, `packages/*`                                                       | Turborepo — по необходимости            |
+| Frontend       | Nuxt `^4.5.1` (SSR), Vue 3.5+, Pinia (options stores)                                      | миноры Nuxt обновляются без промедления |
+| UI             | Tailwind CSS 4 (CSS-first, дизайн-токены в `@theme`), Reka UI / shadcn-vue, `cva` + `cn()` | —                                       |
+| Формы          | vee-validate + zod (`toTypedSchema`)                                                       | —                                       |
+| Backend        | Elysia на Bun, REST + `@elysiajs/openapi`                                                  | актуальный стабильный 1.x               |
+| БД             | PostgreSQL + Prisma (миграции Prisma)                                                      | raw SQL — только для аналитики          |
+| Фоновые задачи | Redis + BullMQ                                                                             | —                                       |
+| Мониторинг     | Sentry (web + api) с первого деплоя                                                        | —                                       |
 
 - Elysia выбрана вместо NestJS (решение 2026-07-28): Bun-нативность, чистый TS
   без legacy-декораторов (ранний путь к TS 7), OpenAPI из коробки. Недостающие
@@ -197,21 +195,21 @@ Rationale: референсный проект не имел ни одного q
 
 ### Соглашения об именовании
 
-| Что | Правило | Пример |
-|---|---|---|
-| Файлы слоёв | `{entity}.{subtype}.ts` | `water.gateway.ts`, `meal.mapper.ts` |
-| Доменные типы | файл `{entity}.types.ts`, интерфейсы `I*` | `IWaterIntake` |
-| Интерфейс шлюза | абстрактный класс `I{Feature}Gateway` | `IWaterGateway` |
-| Реализация / сервис / маппер | `{Feature}Gateway/Service/Mapper` | `WaterService` |
-| Store | файл `{feature}.ts`, id = имя файла, хук `use{X}Store` | `defineStore("water")` |
-| Composable | `use*`, файл = имя функции; фабрики — `create*` | `useWaterProgress.ts` |
-| Компоненты | PascalCase, имя из пути; `index.vue` — корень группы | `<WaterCardHeader>` |
-| Маршруты | константы в `pages.ts` слайса, `as const`; строки путей в коде запрещены | `pages.dashboard` |
-| Константы | SCREAMING_SNAKE на уровне модуля | `DEFAULT_SERVING_ML` |
-| Provided-сервисы | `$camelCase` на NuxtApp | `$waterService` |
-| Emits | типизированные кортежи | `defineEmits<{ "update:modelValue": [v: boolean] }>()` |
-| i18n-ключи | snake_case, точечные неймспейсы | `water.goal_reached_title` |
-| Язык кода | идентификаторы и комментарии — английский; продуктовые документы — русский допустим | — |
+| Что                          | Правило                                                                             | Пример                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Файлы слоёв                  | `{entity}.{subtype}.ts`                                                             | `water.gateway.ts`, `meal.mapper.ts`                   |
+| Доменные типы                | файл `{entity}.types.ts`, интерфейсы `I*`                                           | `IWaterIntake`                                         |
+| Интерфейс шлюза              | абстрактный класс `I{Feature}Gateway`                                               | `IWaterGateway`                                        |
+| Реализация / сервис / маппер | `{Feature}Gateway/Service/Mapper`                                                   | `WaterService`                                         |
+| Store                        | файл `{feature}.ts`, id = имя файла, хук `use{X}Store`                              | `defineStore("water")`                                 |
+| Composable                   | `use*`, файл = имя функции; фабрики — `create*`                                     | `useWaterProgress.ts`                                  |
+| Компоненты                   | PascalCase, имя из пути; `index.vue` — корень группы                                | `<WaterCardHeader>`                                    |
+| Маршруты                     | константы в `pages.ts` слайса, `as const`; строки путей в коде запрещены            | `pages.dashboard`                                      |
+| Константы                    | SCREAMING_SNAKE на уровне модуля                                                    | `DEFAULT_SERVING_ML`                                   |
+| Provided-сервисы             | `$camelCase` на NuxtApp                                                             | `$waterService`                                        |
+| Emits                        | типизированные кортежи                                                              | `defineEmits<{ "update:modelValue": [v: boolean] }>()` |
+| i18n-ключи                   | snake_case, точечные неймспейсы                                                     | `water.goal_reached_title`                             |
+| Язык кода                    | идентификаторы и комментарии — английский; продуктовые документы — русский допустим | —                                                      |
 
 Props: без v-model — деструктуризация с дефолтами (Vue 3.5), без `withDefaults`;
 с v-model — `withDefaults` + `useVModel`; `computed({get,set})` для v-model
@@ -297,8 +295,12 @@ Props: без v-model — деструктуризация с дефолтами
   запрещены.
 - Дизайн-решения фиксируются датированными документами в `docs/`
   (`YYYY-MM-DD-topic.md`).
-- Функциональность проходит spec-kit цикл: specify → clarify → plan (с
-  Constitution Check) → tasks → implement.
+- Агентный харнес — ECC (плагин `ecc@ecc`, включён через
+  `.claude/settings.json`). Функциональность проходит его цикл: `/plan` с
+  явным Constitution Check (план сверяется с принципами I–VII до начала работ)
+  → реализация через TDD (тесты до кода, Принцип VII) → `/code-review` до
+  merge. Для крупных фич допустимы оркестрированные команды ECC
+  (`/orch-add-feature` и подобные) — они обязаны проходить те же гейты.
 
 ## Governance
 
@@ -306,12 +308,13 @@ Props: без v-model — деструктуризация с дефолтами
 - **Поправки**: отдельным изменением с обоснованием; версия — по semver:
   MAJOR — несовместимое удаление/переопределение принципов; MINOR — новый
   принцип или существенное расширение; PATCH — уточнения формулировок.
-  Поправка обязана синхронизировать зависимые шаблоны `.specify/templates/*`.
-- **Соответствие**: каждый implementation plan проходит Constitution Check до
-  начала работ и повторно после дизайна; отступления допускаются только через
-  Complexity Tracking с обоснованием, почему более простая альтернатива
-  недостаточна.
+  Поправка обязана обновить зависимые документы (CLAUDE.md, README) в том же
+  изменении.
+- **Соответствие**: каждый план реализации (`/plan` в ECC) содержит
+  Constitution Check до начала работ и повторно после дизайна; отступления
+  допускаются только с явным обоснованием в плане, почему более простая
+  альтернатива недостаточна.
 - Выбор конкретных версий инструментов (например, переход на TS 7 по описанным
   критериям) не требует поправки — фиксируется записью в `docs/`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-28 | **Last Amended**: 2026-07-28
+**Version**: 1.1.0 | **Ratified**: 2026-07-28 | **Last Amended**: 2026-10-21
