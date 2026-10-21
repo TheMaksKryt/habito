@@ -196,7 +196,7 @@ bun test, Vitest, Playwright в PR #7, docker compose, CI workflow); добав�
 | #   | Phase            | Description                                                                                  | Status  | Parallel   | Depends | PRP Plan |
 | --- | ---------------- | -------------------------------------------------------------------------------------------- | ------- | ---------- | ------- | -------- |
 | 1   | Parity           | `.gitattributes`, `endOfLine`, renormalize, корневой `check`, CI вызывает `check`, `concurrency` | complete | -         | -       | `.claude/PRPs/plans/completed/quality-gates-parity-phase-1-parity.plan.md` · отчёт `.claude/PRPs/reports/quality-gates-parity-phase-1-parity-report.md` · PR #10 |
-| 2   | Hooks            | Lefthook: pre-commit staged lint/format, pre-push `check`, установка через postinstall        | pending | with 3     | 1       | -        |
+| 2   | Hooks            | Lefthook: pre-commit staged lint/format, pre-push `check`, установка через postinstall        | in-progress | with 3 | 1       | `.claude/PRPs/plans/quality-gates-parity-phase-2-hooks.plan.md` |
 | 3   | CTO agent + docs | `.claude/agents/cto.md`, раздел «Проверки» в CLAUDE.md с правилами и «почему»               | pending | with 2     | 1       | -        |
 | 4   | E2E in CI        | job `e2e` по изменениям UI: compose up, Playwright, артефакты (после мержа PR #7)            | pending | with 2, 3  | 1       | -        |
 | 5   | Coverage report  | coverage api/web в job summary без порога                                                    | pending | with 4     | 1       | -        |
