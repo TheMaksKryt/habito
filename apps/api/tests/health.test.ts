@@ -37,6 +37,12 @@ describe('HealthService', () => {
     expect(report.status).toBe('degraded')
     expect(report.dependencies.database).toBe('down')
   })
+
+  it('names every failing dependency when all probes fail', async () => {
+    const report = await service({ database: down, cache: hang }, 20).report()
+    expect(report.status).toBe('degraded')
+    expect(report.dependencies).toEqual({ database: 'down', cache: 'down' })
+  })
 })
 
 describe('GET /health', () => {
@@ -45,7 +51,11 @@ describe('GET /health', () => {
     const response = await app.handle(new Request('http://localhost/health'))
     expect(response.status).toBe(200)
     const body = (await response.json()) as HealthReport
-    expect(body.status).toBe('ok')
+    expect(body).toEqual({
+      status: 'ok',
+      version: 'test',
+      dependencies: { database: 'up', cache: 'up' },
+    })
   })
 
   it('returns 503 when a dependency is down', async () => {
