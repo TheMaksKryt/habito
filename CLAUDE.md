@@ -20,6 +20,27 @@ bun run db:generate            # Prisma client
 Установка зависимостей — только `bun install --frozen-lockfile` (CI падает при
 рассинхроне lock-файла).
 
+## Проверки
+
+Один контур, одна команда: `bun run check` локально = job `quality` в CI.
+Правила с «почему» (LF, `check`, хуки) — в разделе ниже; здесь карта.
+
+| Проверка                                    | Как запускается                                       | Когда                              |
+| ------------------------------------------- | ----------------------------------------------------- | ---------------------------------- |
+| eslint + prettier по staged-файлам          | pre-commit (Lefthook, ~1–2 с)                         | каждый `git commit`                |
+| `check`: generate → lint → typecheck → test | `bun run check`; pre-push (Lefthook); CI `quality`    | перед push, каждый PR              |
+| pre-flight тесты                            | `bun dev` (обход: `--no-test`)                        | старт dev-серверов                 |
+| Сборка Docker-образов                       | CI `images (api)`, `images (web)`                     | каждый PR                          |
+| `/health` живого стека                      | `docker compose up -d` → `curl localhost:3333/health` | перед PR, после правок api/compose |
+| e2e Playwright                              | `bun run --filter web test:e2e` на поднятом стеке     | изменения UI (в CI — Фаза 4)       |
+
+**Агент `cto`** ([.claude/agents/cto.md](.claude/agents/cto.md)) прогоняет
+всё это в фоне и возвращает таблицу гейтов с вердиктом GO/NO-GO и первой
+ошибкой — без логов в контексте. Вызов: `@agent-cto прогони проверки` или
+«используй субагента cto параллельно». Агент ничего не правит, не коммитит и
+не трогает Docker-стек: если стек не поднят, health/e2e помечаются `skip`.
+Красный `check` чинит основная сессия (или `/ecc:build-fix`).
+
 ## Структура
 
 ```text

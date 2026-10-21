@@ -28,3 +28,6 @@ Thumbs.db
 
 # Личные переопределения хуков (lefthook-local.yml — merge поверх lefthook.yml)
 lefthook-local.yml
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
