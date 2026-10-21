@@ -52,7 +52,7 @@ packages/  будущие общие пакеты
 scripts/   dev.ts — оркестратор bun dev
 docs/      конституция и датированные дизайн-решения
 specs/     архив артефактов walking skeleton (spec → plan → tasks; spec-kit снят)
-.claude/   settings.json — включает плагин ECC (ecc@ecc) для этого репо
+.claude/   settings.json — включает плагин ECC (ecc@ecc); agents/ — cto, testsmith
 ```
 
 - api: `createApp()` (src/app.ts) отделён от `listen` (src/index.ts) — один граф
@@ -152,6 +152,16 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
   (по умолчанию http://localhost:3000).
 - Юнит-тесты домен-логики обязательны (Принцип VII); тесты пишутся до или
   вместе с кодом, CI не пропустит их отсутствие для нового модуля с логикой.
+- **Агент `testsmith`** ([.claude/agents/testsmith.md](.claude/agents/testsmith.md))
+  проектирует и пишет тесты «со стороны»: по контракту модуля, не по его
+  реализации, с балансом между smoke-поверхностью и сотней тестов на модуль
+  (ориентир 3–8 на модуль с логикой). Сам выбирает инструменты слоя: api →
+  `bun:test` + `app.handle()`, web → Vitest + мок SDK, e2e → Playwright только
+  для критических потоков. Вызов: `@agent-testsmith напиши тесты для
+apps/api/src/modules/<name>` (forge) или `@agent-testsmith проверь тесты в
+diff` (audit). Правит только тестовые файлы, не коммитит; если модуль не
+  тестируется без инъекции зависимости — говорит об этом в отчёте, а не лезет
+  в код.
 
 ## Не пересоздавать — импортировать
 
