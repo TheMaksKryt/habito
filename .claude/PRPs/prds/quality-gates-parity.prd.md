@@ -200,7 +200,7 @@ bun test, Vitest, Playwright в PR #7, docker compose, CI workflow); добав�
 | 3   | CTO agent + docs | `.claude/agents/cto.md`, раздел «Проверки» в CLAUDE.md с правилами и «почему»               | complete | with 2    | 1       | `.claude/PRPs/plans/completed/quality-gates-parity-phase-3-cto-agent.plan.md` · отчёт `.claude/PRPs/reports/quality-gates-parity-phase-3-cto-agent-report.md` · PR #10 |
 | 4   | E2E in CI        | job `e2e` по изменениям UI: compose up, Playwright, артефакты (после мержа PR #7)            | complete | with 2, 3 | 1       | `.claude/PRPs/plans/completed/quality-gates-parity-phase-4-e2e-ci.plan.md` · отчёт `.claude/PRPs/reports/quality-gates-parity-phase-4-e2e-ci-report.md` · PR #10 |
 | 5   | Coverage report  | coverage api/web в job summary без порога                                                    | complete | with 4    | 1       | `.claude/PRPs/plans/completed/quality-gates-parity-phase-5-coverage.plan.md` · отчёт `.claude/PRPs/reports/quality-gates-parity-phase-5-coverage-report.md` · PR #10 |
-| 6   | SDK drift (Could)| `gen:api` + diff в CI; пересмотр `.gitignore` для `generated/`                               | pending | -          | 1       | -        |
+| 6   | SDK drift (Could)| `gen:api` + diff в CI; пересмотр `.gitignore` для `generated/`                               | in-progress | -      | 1       | `.claude/PRPs/plans/quality-gates-parity-phase-6-openapi-drift.plan.md` · issue #13 |
 
 ### Phase Details
 
