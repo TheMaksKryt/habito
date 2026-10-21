@@ -148,7 +148,9 @@ JSON
 ```
 
 Либо через веб: Settings → Branches → Add branch protection rule → `main` →
-Require status checks: `quality`, `images (api)`, `images (web)`.
+Require status checks: `quality`, `images (api)`, `images (web)`. Job `e2e`
+(Playwright при изменениях UI) в required не добавлять: на PR без UI он
+пропускается, и обязательная проверка зависла бы в «Expected».
 
 ## Структура
 

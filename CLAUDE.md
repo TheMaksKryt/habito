@@ -26,15 +26,15 @@ bun run db:generate            # Prisma client
 Один контур, одна команда: `bun run check` локально = job `quality` в CI.
 Правила с «почему» (LF, `check`, хуки) — в разделе ниже; здесь карта.
 
-| Проверка                                    | Как запускается                                       | Когда                                      |
-| ------------------------------------------- | ----------------------------------------------------- | ------------------------------------------ |
-| eslint + prettier по staged-файлам          | pre-commit (Lefthook, ~1–2 с)                         | каждый `git commit`                        |
-| `check`: generate → lint → typecheck → test | `bun run check`; pre-push (Lefthook); CI `quality`    | перед push, каждый PR                      |
-| coverage (lines/functions, api + web)       | `bun run test:coverage`; CI `quality` → Summary       | отчёт, не гейт; порог — после домен-логики |
-| pre-flight тесты                            | `bun dev` (обход: `--no-test`)                        | старт dev-серверов                         |
-| Сборка Docker-образов                       | CI `images (api)`, `images (web)`                     | каждый PR                                  |
-| `/health` живого стека                      | `docker compose up -d` → `curl localhost:3333/health` | перед PR, после правок api/compose         |
-| e2e Playwright                              | `bun run --filter web test:e2e` на поднятом стеке     | изменения UI (в CI — Фаза 4)               |
+| Проверка                                    | Как запускается                                                 | Когда                                              |
+| ------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------- |
+| eslint + prettier по staged-файлам          | pre-commit (Lefthook, ~1–2 с)                                   | каждый `git commit`                                |
+| `check`: generate → lint → typecheck → test | `bun run check`; pre-push (Lefthook); CI `quality`              | перед push, каждый PR                              |
+| coverage (lines/functions, api + web)       | `bun run test:coverage`; CI `quality` → Summary                 | отчёт, не гейт; порог — после домен-логики         |
+| pre-flight тесты                            | `bun dev` (обход: `--no-test`)                                  | старт dev-серверов                                 |
+| Сборка Docker-образов                       | CI `images (api)`, `images (web)`                               | каждый PR                                          |
+| `/health` живого стека                      | `docker compose up -d` → `curl localhost:3333/health`           | перед PR, после правок api/compose                 |
+| e2e Playwright                              | `bun run --filter web test:e2e` на поднятом стеке; CI job `e2e` | изменения UI (фильтр путей в ci.yaml), не required |
 
 **Агент `cto`** ([.claude/agents/cto.md](.claude/agents/cto.md)) прогоняет
 всё это в фоне и возвращает таблицу гейтов с вердиктом GO/NO-GO и первой
@@ -139,9 +139,11 @@ Elysia t.Object-схемы → @elysiajs/openapi → apps/api/openapi.json
   `vi.mock('~~/generated/api')`.
 - web e2e — Playwright ([apps/web/e2e](apps/web/e2e), `bun run --filter web test:e2e`)
   поверх поднятого `bun dev` или `docker compose up`: SDK не мокается, проверяется реальная цепочка
-  SSR → SDK → API. Запускается вручную, в CI не входит — e2e добавляются в CI
-  вместе с первым критическим пользовательским потоком (Принцип VII).
-  `E2E_BASE_URL` переопределяет адрес web (по умолчанию http://localhost:3000).
+  SSR → SDK → API. В CI — job `e2e` при изменениях UI (список путей в
+  `.github/workflows/ci.yaml`), не блокирует merge; новые спеки — вместе с
+  первым критическим потоком (Принцип VII). Локально один раз
+  `bunx playwright install chromium`. `E2E_BASE_URL` переопределяет адрес web
+  (по умолчанию http://localhost:3000).
 - Юнит-тесты домен-логики обязательны (Принцип VII); тесты пишутся до или
   вместе с кодом, CI не пропустит их отсутствие для нового модуля с логикой.
 
